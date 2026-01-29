@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:latest
+    container_name: rocketchat
+    restart: unless-stopped
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/rocketchat?replicaSet=rs0&directConnection=true
+      - MONGO_OPLOG_URL=mongodb://mongodb:27017/local?replicaSet=rs0&directConnection=true
+      - ROOT_URL=http://192.168.242.223:3000
+      - PORT=3000
+      - DEPLOY_METHOD=docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:7.0
+    container_name: db
+    restart: unless-stopped
+    volumes:
+      - ./data/db:/data/db
+      - ./data/dump:/dump
+    command: mongod --oplogSize 128 --replSet rs0 --bind_ip_all
+    # Cần expose port để service init có thể kết nối
+    ports:
+      - "27017:27017"
+
+  # Container phụ này chỉ chạy 1 lần để khởi tạo Replica Set cho Mongo
+  mongodb-init-replica:
+    image: mongo:7.0
+    command: >
+      bash -c "echo 'Chờ MongoDB khởi động...';
+      sleep 10;
+      mongosh --host mongodb:27017 --eval 'rs.initiate({ _id: \"rs0\", members: [ { _id: 0, host: \"mongodb:27017\" } ] })';
+      echo 'Replica Set đã được khởi tạo!'"
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:
