@@ -1,6 +1,15 @@
 version: "3.8"
 
 services:
+
+  tunnel:
+    container_name: cloudflared-tunnel
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiMmZlMzEyNjcxN2ZjNmM3YzAyNDFhYzU3MmQ1Mjg2MDkiLCJ0IjoiMWVmYWVkYjgtMDU3NS00MDAxLTllOGMtMDdmMWM0YjlkMTY2IiwicyI6Ik5qZzNNRFUzTldZdE5qTTVPUzAwTTJNMkxUaG1NRGN0TURObFptWXdaREkzTWpnNCJ9
+    depends_on:
+      - rocketchat
+
   rocketchat:
     image: registry.rocket.chat/rocketchat/rocket.chat:latest
     container_name: rocketchat
